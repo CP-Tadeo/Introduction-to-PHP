@@ -1,0 +1,127 @@
+## login.php:
+
+```php
+<?php
+// Sample salt and stored hash values
+$salt = 'XyZzy12*_';
+$stored_hash = '1a52e17fa899cf40fb04cfc42e6352f1';
+```
+
+- The `salt` is a random string that is added to the password before hashing to increase its security.
+- The `stored_hash` is the hash value of the salted password, and it's used for comparison when validating the login credentials.
+
+```php
+function checkCredentials($name, $password)
+{
+    global $salt, $stored_hash;
+    // Calculate the hash of the provided password
+    $md5 = hash('md5', $salt . $password);
+    
+    // Compare the hash with the stored hash
+    if ($md5 === $stored_hash) {
+        // Successful login, redirect to the game page
+        header("Location: game.php?name=" . urlencode($name));
+        return;
+    } else {
+        // Incorrect password
+        $message = "Incorrect password";
+    }
+    
+    return $message;
+}
+```
+
+- `checkCredentials()` is a function that checks the user's login credentials against the stored hash.
+- It takes two parameters: `$name` (the user's name) and `$password` (the entered password).
+- It calculates the hash of the salted password using the provided password and compares it with the `stored_hash`.
+- If the hashes match, the login is successful, and the user is redirected to `game.php` with the `name` parameter in the URL.
+- If the hashes do not match, it returns the message "Incorrect password".
+
+```php
+// Check if the form is submitted
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = $_POST['who'];
+    $password = $_POST['pass'];
+    
+    // Check for empty fields
+    if (empty($name) || empty($password)) {
+        $message = "User name and password are required";
+    } else {
+        // Validate the credentials
+        $message = checkCredentials($name, $password);
+        if ($message !== "Incorrect password") {
+            // If login is successful, store the user's name in a session variable
+            $_SESSION['name'] = $name;
+        }
+    }
+}
+```
+
+- This part handles the form submission when the user clicks the "Log In" button.
+- It checks if the form is submitted using the POST method (`$_SERVER['REQUEST_METHOD'] === 'POST'`).
+- If the form is submitted, it retrieves the values of the `who` (name) and `pass` (password) fields.
+- It checks if the name and password fields are empty. If either is empty, it sets the `$message` variable with an appropriate error message.
+- If both fields are filled, it calls the `checkCredentials()` function to validate the credentials.
+- If the login is successful (the password is correct), it stores the user's name in a session variable (`$_SESSION['name']`).
+
+## game.php:
+
+```php
+<?php
+session_start();
+
+// Check if the user's name is set in the session
+if (!isset($_SESSION['name'])) {
+    die("Name parameter missing");
+}
+```
+
+- This part starts the session using `session_start()` to access session variables.
+- It checks if the user's name is set in the session. If not, it displays an error message and stops further execution using `die()`.
+
+```php
+function check($computer, $human) {
+    // Array representing the three plays (Rock, Paper, Scissors)
+    $plays = array('Rock', 'Paper', 'Scissors');
+    
+    // Calculate the result of the game
+    $diff = ($computer - $human + 3) % 3;
+    if ($diff == 0) {
+        return "Tie";
+    } elseif ($diff == 1) {
+        return "You Lose";
+    } else {
+        return "You Win";
+    }
+}
+```
+
+- `check()` is a function that determines the result of the Rock-Paper-Scissors game.
+- It takes two parameters: `$computer` (the computer's play) and `$human` (the user's play).
+- The function uses an array `$plays` to represent the three possible plays: "Rock", "Paper", and "Scissors".
+- It calculates the result of the game by computing the difference between the computer's and human's plays and applying the modulo operator (`%`) to ensure the result is in the range [0, 2].
+- Depending on the value of `$diff`, the function returns "Tie", "You Lose", or "You Win".
+
+```php
+// Rest of the code...
+
+// Check if the form is submitted
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get the user's play from the form
+    $userPlay = $_POST['play'];
+
+    // Randomly choose the computer's play
+    $computerPlay = rand(0, 2);
+    
+    // Check the result of the game
+    $result = check($computerPlay, $userPlay);
+}
+```
+
+- This part handles the form submission when the user clicks the "Play" button.
+- It checks if the form is submitted using the POST method (`$_SERVER['REQUEST_METHOD'] === 'POST'`).
+- If the form is submitted, it retrieves the user's play from the `play` field and stores it in `$userPlay`.
+- It then generates a random number (`$computerPlay`) representing the computer's play (0 for Rock, 1 for Paper, and 2 for Scissors).
+- The function `check()` is called to determine the result of the game based on the computer's and user's plays, and the result is stored in `$result`.
+
+The rest of the code in `game.php` handles displaying the welcome message, the game form, and the game result. Additionally, it includes a test feature to check all possible combinations of plays.
